@@ -1,0 +1,10 @@
+EPD_5in65f.c:37:13:EPD_5IN65F_Reset	8	static
+EPD_5in65f.c:52:13:EPD_5IN65F_SendCommand	16	static
+EPD_5in65f.c:65:13:EPD_5IN65F_SendData	16	static
+EPD_5in65f.c:74:13:EPD_5IN65F_BusyHigh	8	static
+EPD_5in65f.c:79:13:EPD_5IN65F_BusyLow	8	static
+EPD_5in65f.c:88:6:EPD_5IN65F_Init	8	static
+EPD_5in65f.c:131:6:EPD_5IN65F_Clear	24	static
+EPD_5in65f.c:156:6:EPD_5IN65F_Display	24	static
+EPD_5in65f.c:183:6:EPD_5IN65F_Display_part	32	static
+EPD_5in65f.c:217:6:EPD_5IN65F_Sleep	8	static

@@ -1,0 +1,11 @@
+EPD_2in13.c:71:13:EPD_2IN13_Reset	8	static
+EPD_2in13.c:86:13:EPD_2IN13_SendCommand	16	static
+EPD_2in13.c:99:13:EPD_2IN13_SendData	16	static
+EPD_2in13.c:111:6:EPD_2IN13_ReadBusy	8	static
+EPD_2in13.c:124:13:EPD_2IN13_TurnOnDisplay	8	static
+EPD_2in13.c:134:13:EPD_2IN13_SetWindows	24	static
+EPD_2in13.c:147:13:EPD_2IN13_SetCursor	16	static
+EPD_2in13.c:162:6:EPD_2IN13_Init	24	static
+EPD_2in13.c:209:6:EPD_2IN13_Clear	16	static
+EPD_2in13.c:230:6:EPD_2IN13_Display	24	static
+EPD_2in13.c:251:6:EPD_2IN13_Sleep	8	static

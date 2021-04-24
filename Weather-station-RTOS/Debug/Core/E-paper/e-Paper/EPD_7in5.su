@@ -1,0 +1,9 @@
+EPD_7in5.c:94:13:EPD_7IN5_Reset	8	static
+EPD_7in5.c:109:13:EPD_7IN5_SendCommand	16	static
+EPD_7in5.c:122:13:EPD_7IN5_SendData	16	static
+EPD_7in5.c:134:6:EPD_7IN5_ReadBusy	8	static
+EPD_7in5.c:148:13:EPD_7IN5_TurnOnDisplay	8	static
+EPD_7in5.c:159:6:EPD_7IN5_Init	8	static
+EPD_7in5.c:209:6:EPD_7IN5_Clear	24	static
+EPD_7in5.c:230:6:EPD_7IN5_Display	32	static
+EPD_7in5.c:265:6:EPD_7IN5_Sleep	8	static

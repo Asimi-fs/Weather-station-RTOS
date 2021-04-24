@@ -1,0 +1,12 @@
+EPD_2in13_V2.c:95:13:EPD_2IN13_V2_Reset	8	static
+EPD_2in13_V2.c:110:13:EPD_2IN13_V2_SendCommand	16	static
+EPD_2in13_V2.c:123:13:EPD_2IN13_V2_SendData	16	static
+EPD_2in13_V2.c:135:6:EPD_2IN13_V2_ReadBusy	8	static
+EPD_2in13_V2.c:148:13:EPD_2IN13_V2_TurnOnDisplay	8	static
+EPD_2in13_V2.c:160:13:EPD_2IN13_V2_TurnOnDisplayPart	8	static
+EPD_2in13_V2.c:171:6:EPD_2IN13_V2_Init	24	static
+EPD_2in13_V2.c:271:6:EPD_2IN13_V2_Clear	16	static
+EPD_2in13_V2.c:291:6:EPD_2IN13_V2_Display	24	static
+EPD_2in13_V2.c:311:6:EPD_2IN13_V2_DisplayPartBaseImage	32	static
+EPD_2in13_V2.c:336:6:EPD_2IN13_V2_DisplayPart	24	static
+EPD_2in13_V2.c:355:6:EPD_2IN13_V2_Sleep	8	static

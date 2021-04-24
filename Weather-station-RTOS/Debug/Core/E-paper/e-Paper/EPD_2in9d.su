@@ -1,0 +1,12 @@
+EPD_2in9d.c:163:13:EPD_2IN9D_Reset	8	static
+EPD_2in9d.c:178:13:EPD_2IN9D_SendCommand	16	static
+EPD_2in9d.c:191:13:EPD_2IN9D_SendData	16	static
+EPD_2in9d.c:203:6:EPD_2IN9D_ReadBusy	16	static
+EPD_2in9d.c:220:13:EPD_SetFullReg	16	static
+EPD_2in9d.c:256:13:EPD_2IN9D_SetPartReg	16	static
+EPD_2in9d.c:294:13:EPD_2IN9D_TurnOnDisplay	8	static
+EPD_2in9d.c:306:6:EPD_2IN9D_Init	8	static
+EPD_2in9d.c:345:6:EPD_2IN9D_Clear	24	static
+EPD_2in9d.c:373:6:EPD_2IN9D_Display	32	static
+EPD_2in9d.c:403:6:EPD_2IN9D_DisplayPart	24	static
+EPD_2in9d.c:438:6:EPD_2IN9D_Sleep	8	static

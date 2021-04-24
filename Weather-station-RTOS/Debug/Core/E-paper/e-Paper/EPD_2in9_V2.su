@@ -1,0 +1,15 @@
+EPD_2in9_V2.c:61:13:EPD_2IN9_V2_Reset	8	static
+EPD_2in9_V2.c:76:13:EPD_2IN9_V2_SendCommand	16	static
+EPD_2in9_V2.c:89:13:EPD_2IN9_V2_SendData	16	static
+EPD_2in9_V2.c:101:6:EPD_2IN9_V2_ReadBusy	8	static
+EPD_2in9_V2.c:114:13:EPD_2IN9_V2_LUT	16	static
+EPD_2in9_V2.c:127:13:EPD_2IN9_V2_TurnOnDisplay	8	static
+EPD_2in9_V2.c:135:13:EPD_2IN9_V2_TurnOnDisplay_Partial	8	static
+EPD_2in9_V2.c:147:13:EPD_2IN9_V2_SetWindows	24	static
+EPD_2in9_V2.c:164:13:EPD_2IN9_V2_SetCursor	16	static
+EPD_2in9_V2.c:178:6:EPD_2IN9_V2_Init	8	static
+EPD_2in9_V2.c:215:6:EPD_2IN9_V2_Clear	16	static
+EPD_2in9_V2.c:230:6:EPD_2IN9_V2_Display	24	static
+EPD_2in9_V2.c:241:6:EPD_2IN9_V2_Display_Base	24	static
+EPD_2in9_V2.c:258:6:EPD_2IN9_V2_Display_Partial	24	static
+EPD_2in9_V2.c:304:6:EPD_2IN9_V2_Sleep	8	static

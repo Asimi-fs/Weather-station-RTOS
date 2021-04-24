@@ -1,0 +1,9 @@
+EPD_5in83.c:94:13:EPD_5IN83_Reset	8	static
+EPD_5in83.c:109:13:EPD_5IN83_SendCommand	16	static
+EPD_5in83.c:122:13:EPD_5IN83_SendData	16	static
+EPD_5in83.c:134:13:EPD_5IN83_ReadBusy	8	static
+EPD_5in83.c:147:13:EPD_5IN83_TurnOnDisplay	8	static
+EPD_5in83.c:158:6:EPD_5IN83_Init	8	static
+EPD_5in83.c:207:6:EPD_5IN83_Clear	24	static
+EPD_5in83.c:228:6:EPD_5IN83_Display	32	static
+EPD_5in83.c:263:6:EPD_5IN83_Sleep	8	static

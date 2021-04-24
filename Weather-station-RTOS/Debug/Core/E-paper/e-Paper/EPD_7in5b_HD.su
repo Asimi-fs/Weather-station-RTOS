@@ -1,0 +1,13 @@
+EPD_7in5b_HD.c:37:13:EPD_7IN5B_HD_Reset	8	static
+EPD_7in5b_HD.c:52:13:EPD_7IN5B_HD_SendCommand	16	static
+EPD_7in5b_HD.c:65:13:EPD_7IN5B_HD_SendData	16	static
+EPD_7in5b_HD.c:78:6:EPD_7IN5B_HD_WaitUntilIdle	8	static
+EPD_7in5b_HD.c:93:13:EPD_7IN5B_HD_TurnOnDisplay	8	static
+EPD_7in5b_HD.c:106:7:EPD_7IN5B_HD_Init	8	static
+EPD_7in5b_HD.c:170:6:EPD_7IN5B_HD_Clear	16	static
+EPD_7in5b_HD.c:192:6:EPD_7IN5B_HD_ClearRed	16	static
+EPD_7in5b_HD.c:216:6:EPD_7IN5B_HD_ClearBlack	16	static
+EPD_7in5b_HD.c:244:6:EPD_7IN5B_HD_Display	40	static
+EPD_7in5b_HD.c:272:6:EPD_7IN5B_HD_DisplayPicture	56	static
+EPD_7in5b_HD.c:315:6:EPD_7IN5B_HD_DisplayImage	48	static
+EPD_7in5b_HD.c:359:6:EPD_7IN5B_HD_Sleep	8	static

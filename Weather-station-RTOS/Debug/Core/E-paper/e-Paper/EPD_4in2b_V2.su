@@ -1,0 +1,9 @@
+EPD_4in2b_V2.c:38:13:EPD_4IN2B_V2_Reset	8	static
+EPD_4in2b_V2.c:53:13:EPD_4IN2B_V2_SendCommand	16	static
+EPD_4in2b_V2.c:66:13:EPD_4IN2B_V2_SendData	16	static
+EPD_4in2b_V2.c:78:6:EPD_4IN2B_V2_ReadBusy	16	static
+EPD_4in2b_V2.c:95:13:EPD_4IN2B_V2_TurnOnDisplay	8	static
+EPD_4in2b_V2.c:106:6:EPD_4IN2B_V2_Init	8	static
+EPD_4in2b_V2.c:121:6:EPD_4IN2B_V2_Clear	24	static
+EPD_4in2b_V2.c:148:6:EPD_4IN2B_V2_Display	32	static
+EPD_4in2b_V2.c:175:6:EPD_4IN2B_V2_Sleep	8	static
