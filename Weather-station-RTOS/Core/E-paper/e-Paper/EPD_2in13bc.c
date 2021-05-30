@@ -131,7 +131,7 @@ void EPD_2IN13BC_ReadBusy(void)
 {
     Debug("e-Paper busy\r\n");
     while(DEV_Digital_Read(EPD_BUSY_PIN) == 0) {
-        DEV_Delay_ms(100);
+        //DEV_Delay_ms(100);
     }
     Debug("e-Paper busy release\r\n");
 }
@@ -143,7 +143,7 @@ parameter:
 static void EPD_2IN13BC_TurnOnDisplay(void)
 {
     EPD_2IN13BC_SendCommand(0x12);		 //DISPLAY REFRESH
-    DEV_Delay_ms(10);
+    //DEV_Delay_ms(10);
 
     EPD_2IN13BC_ReadBusy();
 }

@@ -75,7 +75,7 @@
 /**
  * delay x ms
 **/
-#define DEV_Delay_ms(__xms) HAL_Delay(__xms);
+#define DEV_Delay_ms(__xms) osDelay(__xms/portTICK_RATE_MS);
 
 void DEV_SPI_WriteByte(UBYTE value);
 

@@ -19,7 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_host.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -51,27 +51,51 @@ struct bme680_field_data gas_sensor_data;
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c3;
 
-I2S_HandleTypeDef hi2s2;
-I2S_HandleTypeDef hi2s3;
-
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi4;
 
+/* Definitions for SensorTask */
+osThreadId_t SensorTaskHandle;
+const osThreadAttr_t SensorTask_attributes = {
+  .name = "SensorTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+/* Definitions for DisplayTask */
+osThreadId_t DisplayTaskHandle;
+const osThreadAttr_t DisplayTask_attributes = {
+  .name = "DisplayTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for LedTask */
+osThreadId_t LedTaskHandle;
+const osThreadAttr_t LedTask_attributes = {
+  .name = "LedTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
+/* Definitions for myMutex01 */
+osMutexId_t myMutex01Handle;
+const osMutexAttr_t myMutex01_attributes = {
+  .name = "myMutex01"
+};
 /* USER CODE BEGIN PV */
 uint8_t GTXBuffer[512], GRXBuffer[512];
 int8_t rslt = BME680_OK;
 uint8_t GTXBuffer1[512];
+UBYTE *BlackImage, *RYImage;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2S2_Init(void);
-static void MX_I2S3_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_SPI4_Init(void);
 static void MX_I2C3_Init(void);
-void MX_USB_HOST_Process(void);
+void StartSensorTask(void *argument);
+void StartDisplayTask(void *argument);
+void StartLedTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 void user_delay_ms(uint32_t period);
@@ -116,58 +140,62 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2S2_Init();
-  MX_I2S3_Init();
   MX_SPI1_Init();
-  MX_USB_HOST_Init();
   MX_SPI4_Init();
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
-  int8_t status[10];
-  set_senosr_struct(&gas_sensor, 0, 20);
-  HAL_Delay(100);
 
-  rslt = bme680_init(&gas_sensor);
-  uint16_t meas_period = 180;
-  bme680_get_profile_dur(&meas_period, &gas_sensor);
-  HAL_Delay(meas_period);
-  bme680_start(&gas_sensor);
-
-   EPD_2in13bc_test();
-   Paint_Clear(WHITE);
-   Paint_DrawString_EN(5, 20, "*****", &Font8, WHITE, BLACK);
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of myMutex01 */
+  myMutex01Handle = osMutexNew(&myMutex01_attributes);
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of SensorTask */
+  SensorTaskHandle = osThreadNew(StartSensorTask, NULL, &SensorTask_attributes);
+
+  /* creation of DisplayTask */
+  DisplayTaskHandle = osThreadNew(StartDisplayTask, NULL, &DisplayTask_attributes);
+
+  /* creation of LedTask */
+  LedTaskHandle = osThreadNew(StartLedTask, NULL, &LedTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
-//	  HAL_SPI_Transmit(&hspi4, 0x1C, 1, BUS_TIMEOUT);
-//	  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-//	  HAL_Delay(100);
-      user_delay_ms(meas_period); /* Delay till the measurement is ready */
-      rslt = bme680_get_sensor_data(&gas_sensor_data, &gas_sensor);
-
-      printf("T: %.2f degC, P: %.2f hPa, H %.2f %%rH ", gas_sensor_data.temperature / 100.0f, // @suppress("Float formatting support")
-          gas_sensor_data.pressure / 100.0f, gas_sensor_data.humidity / 1000.0f );
-      /* Avoid using measurements from an unstable heating setup */
-      if(gas_sensor_data.status & BME680_GASM_VALID_MSK)
-          printf(", G: %d ohms", gas_sensor_data.gas_resistance);
-
-      printf("\r\n");
-
-      /* Trigger the next measurement if you would like to read data out continuously */
-      if (gas_sensor.power_mode == BME680_FORCED_MODE) {
-          rslt = bme680_set_sensor_mode(&gas_sensor);
-      }
-//	  bme680_get_sensor_mode(&gas_sensor);
-//	  rslt = bme680_self_test(&gas_sensor);
-//	  bme680_get_sensor_settings(BME680_REG_FILTER_INDEX, &gas_sensor);
-//
-//	  HAL_Delay(1000);
     /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
   }
@@ -182,7 +210,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
   */
@@ -192,7 +219,7 @@ void SystemClock_Config(void)
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -213,14 +240,6 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2S;
-  PeriphClkInitStruct.PLLI2S.PLLI2SN = 200;
-  PeriphClkInitStruct.PLLI2S.PLLI2SM = 5;
-  PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
@@ -257,74 +276,6 @@ static void MX_I2C3_Init(void)
   /* USER CODE BEGIN I2C3_Init 2 */
 
   /* USER CODE END I2C3_Init 2 */
-
-}
-
-/**
-  * @brief I2S2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2S2_Init(void)
-{
-
-  /* USER CODE BEGIN I2S2_Init 0 */
-
-  /* USER CODE END I2S2_Init 0 */
-
-  /* USER CODE BEGIN I2S2_Init 1 */
-
-  /* USER CODE END I2S2_Init 1 */
-  hi2s2.Instance = SPI2;
-  hi2s2.Init.Mode = I2S_MODE_MASTER_TX;
-  hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
-  hi2s2.Init.DataFormat = I2S_DATAFORMAT_16B;
-  hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
-  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_96K;
-  hi2s2.Init.CPOL = I2S_CPOL_LOW;
-  hi2s2.Init.ClockSource = I2S_CLOCK_PLL;
-  hi2s2.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_ENABLE;
-  if (HAL_I2S_Init(&hi2s2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2S2_Init 2 */
-
-  /* USER CODE END I2S2_Init 2 */
-
-}
-
-/**
-  * @brief I2S3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2S3_Init(void)
-{
-
-  /* USER CODE BEGIN I2S3_Init 0 */
-
-  /* USER CODE END I2S3_Init 0 */
-
-  /* USER CODE BEGIN I2S3_Init 1 */
-
-  /* USER CODE END I2S3_Init 1 */
-  hi2s3.Instance = SPI3;
-  hi2s3.Init.Mode = I2S_MODE_MASTER_TX;
-  hi2s3.Init.Standard = I2S_STANDARD_PHILIPS;
-  hi2s3.Init.DataFormat = I2S_DATAFORMAT_16B;
-  hi2s3.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_96K;
-  hi2s3.Init.CPOL = I2S_CPOL_LOW;
-  hi2s3.Init.ClockSource = I2S_CLOCK_PLL;
-  hi2s3.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_DISABLE;
-  if (HAL_I2S_Init(&hi2s3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2S3_Init 2 */
-
-  /* USER CODE END I2S3_Init 2 */
 
 }
 
@@ -389,7 +340,7 @@ static void MX_SPI4_Init(void)
   hspi4.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi4.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi4.Init.NSS = SPI_NSS_SOFT;
-  hspi4.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi4.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi4.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi4.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi4.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -463,6 +414,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(OTG_FS_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PDM_OUT_Pin */
+  GPIO_InitStruct.Pin = PDM_OUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+  HAL_GPIO_Init(PDM_OUT_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
@@ -476,12 +435,28 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI_CS_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : I2S3_WS_Pin */
+  GPIO_InitStruct.Pin = I2S3_WS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+  HAL_GPIO_Init(I2S3_WS_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : CS_Pin */
   GPIO_InitStruct.Pin = CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : CLK_IN_Pin PB12 */
+  GPIO_InitStruct.Pin = CLK_IN_Pin|GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin
                            Audio_RST_Pin */
@@ -491,6 +466,28 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : I2S3_MCK_Pin I2S3_SCK_Pin I2S3_SD_Pin */
+  GPIO_InitStruct.Pin = I2S3_MCK_Pin|I2S3_SCK_Pin|I2S3_SD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : VBUS_FS_Pin */
+  GPIO_InitStruct.Pin = VBUS_FS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(VBUS_FS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : OTG_FS_ID_Pin OTG_FS_DM_Pin OTG_FS_DP_Pin */
+  GPIO_InitStruct.Pin = OTG_FS_ID_Pin|OTG_FS_DM_Pin|OTG_FS_DP_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
   GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;
@@ -544,7 +541,7 @@ void user_delay_ms(uint32_t period)
      * Return control or wait,
      * for a period amount of milliseconds
      */
-	HAL_Delay(period);
+	osDelayUntil(period/portTICK_RATE_MS);
 }
 
 int8_t user_spi_read(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
@@ -684,41 +681,6 @@ int8_t user_i2c_write(uint8_t dev_id, uint8_t reg_addr, uint8_t *reg_data, uint1
     return rslt;
 }
 
-/*
-int8_t SensorAPI_SPIx_Read(uint8_t slave_address7, uint8_t subaddress, uint8_t *pBuffer, uint16_t ReadNumbr)
-{
-slave_address7 = slave_address7;
-GTXBuffer[0] = subaddress | 0x80;
-
-HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET); // NSS low
-
-HAL_SPI_TransmitReceive(&hspi1, GTXBuffer, GRXBuffer, ReadNumbr+1, BUS_TIMEOUT); // timeout 1000msec;
-while(hspi1.State == HAL_SPI_STATE_BUSY); // wait for xmission complete
-
-HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET); // NSS high
-memcpy(pBuffer, GRXBuffer+1, ReadNumbr);
-
-return 0;
-}
-
-int8_t SensorAPI_SPIx_Write(uint8_t slave_address7, uint8_t subaddress, uint8_t *pBuffer, uint16_t WriteNumbr)
-{
-slave_address7 = slave_address7;
-GTXBuffer[0] = subaddress & 0x7F;
-memcpy(&GTXBuffer[1], pBuffer, WriteNumbr);
-
-HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET); // NSS low
-
-//HAL_SPI_TransmitReceive(&hspi2, pTxData, pRxData, WriteNumbr+1, BUS_TIMEOUT); // send register address + write data
-HAL_SPI_Transmit(&hspi1, GTXBuffer, WriteNumbr+1, BUS_TIMEOUT); // send register address + write data
-while(hspi1.State == HAL_SPI_STATE_BUSY); // wait for xmission complete
-
-HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET); // NSS high
-
-return 0;
-}
-*/
-
 void bme680_start(struct bme680_dev * gas_sensor){
 
 /* You may assign a chip select identifier to be handled later */
@@ -755,6 +717,165 @@ rslt = bme680_set_sensor_mode(gas_sensor);
 
 /* USER CODE END 4 */
 
+/* USER CODE BEGIN Header_StartSensorTask */
+/**
+  * @brief  Function implementing the SensorTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartSensorTask */
+void StartSensorTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+	osStatus_t status;
+  set_senosr_struct(&gas_sensor, 0, 20);
+  //osDelay(500/portTICK_RATE_MS);
+  rslt = bme680_init(&gas_sensor);
+  uint16_t meas_period = 180;
+  bme680_get_profile_dur(&meas_period, &gas_sensor);
+  //HAL_Delay(meas_period);
+  bme680_start(&gas_sensor);
+  /* Infinite loop */
+  for(;;)
+  {
+	  HAL_GPIO_TogglePin(LD6_GPIO_Port, LD6_Pin);
+	  //osDelay(meas_period/portTICK_RATE_MS);
+	  //osMutexAcquire(myMutex01Handle, 1000);
+	  osMutexAcquire(myMutex01Handle, 100);
+	  rslt = bme680_get_sensor_data(&gas_sensor_data, &gas_sensor);
+	  if (gas_sensor.power_mode == BME680_FORCED_MODE)
+	  {
+		  rslt = bme680_set_sensor_mode(&gas_sensor);
+	  }
+	  osMutexRelease(myMutex01Handle);
+	  //osMutexRelease(myMutex01Handle);
+	  vTaskDelay(1000/portTICK_RATE_MS);
+  }
+  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartDisplayTask */
+/**
+* @brief Function implementing the DisplayTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDisplayTask */
+void StartDisplayTask(void *argument)
+{
+  /* USER CODE BEGIN StartDisplayTask */
+	//DEV_Module_Exit();
+//	int i = 0;
+	DEV_Module_Init();
+    EPD_2IN13BC_Init();
+    EPD_2IN13BC_Clear();
+    osDelay(500/portTICK_RATE_MS);
+
+    UWORD Imagesize = ((EPD_2IN13BC_WIDTH % 8 == 0)? (EPD_2IN13BC_WIDTH / 8 ): (EPD_2IN13BC_WIDTH / 8 + 1)) * EPD_2IN13BC_HEIGHT;
+	if((BlackImage = (UBYTE *)malloc(Imagesize)) == NULL)
+	{
+		Error_Handler();
+	}
+	if((RYImage = (UBYTE *)malloc(Imagesize)) == NULL)
+	{
+		Error_Handler();
+	}
+	Paint_NewImage(BlackImage, EPD_2IN13BC_WIDTH, EPD_2IN13BC_HEIGHT, 270, WHITE);
+	Paint_NewImage(RYImage, EPD_2IN13BC_WIDTH, EPD_2IN13BC_HEIGHT, 270, WHITE);
+	Paint_SelectImage(BlackImage);
+	Paint_Clear(WHITE);
+	Paint_SelectImage(RYImage);
+	float temp, hum, press = 0;
+	char buf[10];
+//	Paint_Clear(WHITE);
+  /* Infinite loop */
+  for(;;)
+  {
+	  osMutexAcquire(myMutex01Handle, 100);
+	  temp = gas_sensor_data.temperature/100.0;
+	  hum = gas_sensor_data.humidity/1000.0;
+	  press = gas_sensor_data.pressure/100.0;
+	  osMutexRelease(myMutex01Handle);
+
+//	  i++;
+	  Paint_SelectImage(BlackImage);
+	  Paint_Clear(WHITE);
+	  Paint_DrawString_EN(5, 5, "Temperatura: ", &Font16, WHITE, BLACK);
+
+	  Paint_DrawString_EN(5, 25, "Wilgotnosc: ", &Font16, WHITE, BLACK);
+
+	  Paint_DrawString_EN(5, 45, "Cisnienie: ", &Font16, WHITE, BLACK);
+
+	  Paint_SelectImage(RYImage);
+	  Paint_Clear(WHITE);
+//	  Paint_DrawNum(160, 5, 1, &Font16, WHITE, RED);
+	  gcvt(temp, 4, buf);
+	  Paint_DrawString_EN(140, 5, buf, &Font16, WHITE, RED);
+	  gcvt(hum, 4, buf);
+	  Paint_DrawString_EN(140, 25, buf, &Font16, WHITE, RED);
+	  gcvt(press, 4, buf);
+	  Paint_DrawString_EN(140, 45, buf, &Font16, WHITE, RED);
+
+	  EPD_2IN13BC_Display(BlackImage, RYImage);
+
+//	  //EPD_2in13bc_test();
+//	  //DEV_Module_Exit();
+	  HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+	  vTaskDelay(30000/portTICK_RATE_MS);
+  }
+  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+  /* USER CODE END StartDisplayTask */
+}
+
+/* USER CODE BEGIN Header_StartLedTask */
+/**
+* @brief Function implementing the LedTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartLedTask */
+void StartLedTask(void *argument)
+{
+  /* USER CODE BEGIN StartLedTask */
+	osThreadState_t a, b;
+  /* Infinite loop */
+  for(;;)
+  {
+	a = osThreadGetState(SensorTaskHandle);
+	if(a == osThreadTerminated)
+	{
+		osThreadResume(SensorTaskHandle);
+	}
+	b = osThreadGetState(DisplayTaskHandle);
+    HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+    vTaskDelay(0);
+  }
+  /* USER CODE END StartLedTask */
+}
+
+ /**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM2 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
+
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
@@ -766,6 +887,8 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	  HAL_Delay(100);
   }
   /* USER CODE END Error_Handler_Debug */
 }
